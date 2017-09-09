@@ -35,6 +35,7 @@ def load_vgg(sess, vgg_path):
 
     vgg_model = tf.saved_model.loader.load(sess, [vgg_tag], vgg_path)
     graph = tf.get_default_graph()
+
     w1 = graph.get_tensor_by_name(vgg_input_tensor_name)
     keep = graph.get_tensor_by_name(vgg_keep_prob_tensor_name)
 
@@ -54,21 +55,21 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
     :param num_classes: Number of classes to classify
     :return: The Tensor for the last layer of output
     """
-    # TODO: Implement function
-    layer_7_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    # Initialization for kernel
+    init = tf.truncated_normal_initializer(stddev = 0.001)
+    layer_7_1x1 = tf.layers.conv2d(vgg_layer7_out, num_classes, 1, padding='same', kernel_initializer = init)
 
-    # Add 1x1 conv layers
-    layer_4_1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
-    layer_3_1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    layer_4_1x1 = tf.layers.conv2d(vgg_layer4_out, num_classes, 1, padding='same', kernel_initializer = init)
+    layer_3_1x1 = tf.layers.conv2d(vgg_layer3_out, num_classes, 1, padding='same', kernel_initializer = init)
 
-    upsample_1 = tf.layers.conv2d_transpose(layer_7_1x1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    upsample_1 = tf.layers.conv2d_transpose(layer_7_1x1, num_classes, 5, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     layer1 = tf.add(upsample_1, layer_4_1x1)
 
-    upsample_2 = tf.layers.conv2d_transpose(layer1, num_classes, 4, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    upsample_2 = tf.layers.conv2d_transpose(layer1, num_classes, 5, 2, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
     layer2 = tf.add(upsample_2, layer_3_1x1)
 
-    output = tf.layers.conv2d_transpose(layer2, num_classes, 16, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
+    output = tf.layers.conv2d_transpose(layer2, num_classes, 14, 8, padding='same', kernel_regularizer=tf.contrib.layers.l2_regularizer(1e-3))
 
     return output
 tests.test_layers(layers)
@@ -108,7 +109,7 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
     :param keep_prob: TF Placeholder for dropout keep probability
     :param learning_rate: TF Placeholder for learning rate
     """
-    # TODO: Implement function
+
     steps = 0
     for epoch_i in range(epochs):
         avg_cost = 0
@@ -117,7 +118,8 @@ def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_l
             feed_dict={input_image: images, correct_label: labels, keep_prob:0.5, learning_rate:0.001})
             avg_cost+=loss
 
-    print("Epoch {}/{}...".format(epoch_i+1, epochs),"Training Loss: {:.4f}...".format(avg_cost/batch_size))
+
+        print("Epoch {}/{}...".format(epoch_i+1, epochs),"Training Loss: {:.4f}...".format(avg_cost/batch_size))
 
 tests.test_train_nn(train_nn)
 
